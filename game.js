@@ -28,13 +28,13 @@ const timeDiv = document.getElementById("time");
 
 // 素材
 const bg = new Image();
-bg.src = "assets/background.jpg";
+bg.src = "assets/background.webp";
 const character = new Image();
-character.src = "assets/character1.png";
+character.src = "assets/character1.webp";
 const coinImg = new Image();
-coinImg.src = "assets/coin.png";
+coinImg.src = "assets/coin.webp";
 const trapImg = new Image();
-trapImg.src = "assets/trap.png";
+trapImg.src = "assets/trap.webp";
 const coinSound = new Audio("assets/coin.mp3");
 
 // ========== 自适应全屏 ==========
