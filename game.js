@@ -38,40 +38,59 @@ let isStarted = false;
 let gameInterval;
 let timeInterval;
 
-// 新增：主角运动变量
+// 主角位置和参数
 let characterX = 180;    // 主角横坐标
 let characterY = 300;    // 主角纵坐标
-let characterSpeed = 2;  // 每帧移动像素
-let characterDir = 1;    // 1向右，-1向左
+let characterStep = 16;  // 每次按键移动像素
 
-// 绘制函数
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // 背景
     if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-    // 游戏未开始时，不显示主角和分数
     if (isStarted && character.complete) {
         ctx.drawImage(character, characterX, characterY, 40, 40);
     }
 }
 
-// 主角自动移动循环
-function gameLoop() {
-    if (isStarted) {
-        characterX += characterSpeed * characterDir;
-        // 到边缘反向
-        if (characterX < 0) {
-            characterX = 0;
-            characterDir = 1;
-        }
-        if (characterX > canvas.width - 40) {
-            characterX = canvas.width - 40;
-            characterDir = -1;
-        }
-        draw();
-        requestAnimationFrame(gameLoop);
+// ===== 触屏滑动控制主角 =====
+let touchStartX = null;
+let lastTouchX = null;
+
+canvas.addEventListener('touchstart', function(e) {
+    if (!isStarted) return;
+    if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        lastTouchX = characterX;
     }
-}
+});
+canvas.addEventListener('touchmove', function(e) {
+    if (!isStarted) return;
+    if (e.touches.length === 1 && touchStartX !== null) {
+        const deltaX = e.touches[0].clientX - touchStartX;
+        characterX = lastTouchX + deltaX;
+        if (characterX < 0) characterX = 0;
+        if (characterX > canvas.width - 40) characterX = canvas.width - 40;
+        draw();
+    }
+});
+canvas.addEventListener('touchend', function(e) {
+    touchStartX = null;
+    lastTouchX = null;
+});
+
+// ====== 键盘控制也可用 ======
+document.addEventListener('keydown', function(e) {
+    if (!isStarted) return;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        characterX -= characterStep;
+        if (characterX < 0) characterX = 0;
+        draw();
+    }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        characterX += characterStep;
+        if (characterX > canvas.width - 40) characterX = canvas.width - 40;
+        draw();
+    }
+});
 
 // 获得金币并播放音效
 function getCoin() {
@@ -97,19 +116,13 @@ function startGame() {
     }
     score = 0;
     surviveTime = 0;
-    isStarted = true; // 标记游戏已开始
-    // 重置主角位置和方向
-    characterX = 180;
-    characterY = 300;
-    characterDir = 1;
+    isStarted = true;
+    characterX = 180; // 重置主角位置
     updateUI();
     draw();
 
     clearInterval(gameInterval);
     clearInterval(timeInterval);
-
-    // 启动主角动画循环
-    requestAnimationFrame(gameLoop);
 
     // 每2秒获得一次金币
     gameInterval = setInterval(() => {
