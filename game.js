@@ -10,7 +10,7 @@ let leaderboardData = [
 // === 角色与草地 ===
 const characterWidth = 48, characterHeight = 48;
 // 草地厚度，自己根据背景图片草地“到画布底部的像素高度”调整，建议50~70之间
-const GROUND_HEIGHT = 54;
+const GROUND_HEIGHT = 88;
 
 let characterX = 0, characterY = 0, characterFace = 1;
 let coinX = 100, coinY = 0, coinSize = 36, coinSpeed = 3.2;
