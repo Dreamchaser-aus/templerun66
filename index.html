@@ -22,11 +22,13 @@
     <button id="leaderboardBtn">排行榜</button>
   </div>
 
-  <!-- 游戏主界面 -->
+  <!-- 游戏界面（全屏canvas，上方状态栏） -->
   <div id="game-screen" style="display:none;">
-    <div id="game-container">
-      <canvas id="gameCanvas"></canvas>
+    <div id="game-status">
+      <span id="score">分数: 0</span>
+      <span id="time" style="margin-left: 22px;">存活时间: 0s</span>
     </div>
+    <canvas id="gameCanvas"></canvas>
   </div>
   <script src="game.js"></script>
 </body>
