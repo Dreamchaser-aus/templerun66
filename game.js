@@ -1,16 +1,46 @@
-// ========== 首页及排行榜 ==========
-const welcomeScreen = document.getElementById("welcome-screen");
-const gameScreen = document.getElementById("game-screen");
-const goGameBtn = document.getElementById("goGameBtn");
-const welcomeChancesDiv = document.getElementById("welcome-chances");
-const leaderboardList = document.getElementById("leaderboard-list");
-
+// ========== 全局变量先声明 ==========
+let chances = 3, inviteChances = 0;
+let score = 0, surviveTime = 0, isStarted = false, isGameOver = false, timeInterval;
 let leaderboardData = [
     { name: "玩家A", score: 320 },
     { name: "玩家B", score: 230 },
     { name: "玩家C", score: 180 }
 ];
+let characterX = 180, characterY = 300, characterFace = 1;
+let coinX = 100, coinY = 0, coinSize = 32, coinSpeed = 3;
+let trapX = 200, trapY = 0, trapSize = 36, trapSpeed = 4;
+let dragging = false, dragStartX = null, charStartX = null;
 
+// ========== DOM节点 ==========
+const welcomeScreen = document.getElementById("welcome-screen");
+const gameScreen = document.getElementById("game-screen");
+const goGameBtn = document.getElementById("goGameBtn");
+const welcomeChancesDiv = document.getElementById("welcome-chances");
+const leaderboardList = document.getElementById("leaderboard-list");
+const scoreDiv = document.getElementById("score");
+const timeDiv = document.getElementById("time");
+const chancesDiv = document.getElementById("chances");
+const startBtn = document.getElementById("startBtn");
+const taskBtn = document.getElementById("taskBtn");
+const skinsBtn = document.getElementById("skinsBtn");
+const leaderboardBtn = document.getElementById("leaderboardBtn");
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 400;
+canvas.height = 400;
+
+// ========== 素材加载 ==========
+const bg = new Image();
+bg.src = "assets/background.jpg";
+const character = new Image();
+character.src = "assets/character1.png";
+const coinImg = new Image();
+coinImg.src = "assets/coin.png";
+const trapImg = new Image();
+trapImg.src = "assets/trap.png";
+const coinSound = new Audio("assets/coin.mp3");
+
+// ========== 首页及排行榜 ==========
 function updateWelcomeScreen() {
     welcomeChancesDiv.textContent = `今日机会: ${chances} | 邀请机会: ${inviteChances}`;
     let lbHtml = "";
@@ -31,45 +61,7 @@ goGameBtn.onclick = () => {
     draw();
 };
 
-// ========== 游戏主逻辑 ==========
-const scoreDiv = document.getElementById("score");
-const timeDiv = document.getElementById("time");
-const chancesDiv = document.getElementById("chances");
-const startBtn = document.getElementById("startBtn");
-const taskBtn = document.getElementById("taskBtn");
-const skinsBtn = document.getElementById("skinsBtn");
-const leaderboardBtn = document.getElementById("leaderboardBtn");
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-canvas.width = 400;
-canvas.height = 400;
-
-// 素材加载
-const bg = new Image();
-bg.src = "assets/background.jpg";
-const character = new Image();
-character.src = "assets/character1.png";
-const coinImg = new Image();
-coinImg.src = "assets/coin.png";
-const trapImg = new Image();
-trapImg.src = "assets/trap.png";
-const coinSound = new Audio("assets/coin.mp3");
-
-// 游戏变量
-let score = 0, surviveTime = 0, chances = 3, inviteChances = 0;
-let isStarted = false, isGameOver = false, timeInterval;
-
-// 主角参数
-let characterX = 180, characterY = 300, characterFace = 1;
-
-// 金币
-let coinX = 100, coinY = 0, coinSize = 32, coinSpeed = 3;
-
-// 陷阱
-let trapX = 200, trapY = 0, trapSize = 36, trapSpeed = 4;
-
 // ========== 触屏滑动同步控制主角 ==========
-let dragging = false, dragStartX = null, charStartX = null;
 canvas.addEventListener('touchstart', function(e) {
     if (!isStarted || isGameOver) return;
     if (e.touches.length === 1) {
