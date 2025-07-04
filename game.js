@@ -27,6 +27,8 @@ const bg = new Image();
 bg.src = "assets/background.jpg";
 const character = new Image();
 character.src = "assets/character1.png";
+const coinImg = new Image();
+coinImg.src = "assets/coin.png";
 const coinSound = new Audio("assets/coin.mp3");
 
 // 变量
@@ -35,20 +37,42 @@ let surviveTime = 0;
 let chances = 3;
 let inviteChances = 0;
 let isStarted = false;
-let gameInterval;
 let timeInterval;
 
-// 主角位置和参数
-let characterX = 180;    // 主角横坐标
-let characterY = 300;    // 主角纵坐标
-let characterStep = 16;  // 每次按键移动像素
+// 主角参数
+let characterX = 180;
+let characterY = 300;
+let characterStep = 16;
 
+// 金币参数
+let coinX = 100;
+let coinY = 220;
+const coinSize = 32;
+
+// 画面刷新
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-    if (isStarted && character.complete) {
-        ctx.drawImage(character, characterX, characterY, 40, 40);
+    if (isStarted) {
+        // 画金币
+        if (coinImg.complete) ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
+        // 画主角
+        if (character.complete) ctx.drawImage(character, characterX, characterY, 40, 40);
     }
+}
+
+// 检查主角是否碰到金币
+function checkGetCoin() {
+    const cx = characterX + 20, cy = characterY + 20; // 主角中心
+    const gx = coinX + coinSize / 2, gy = coinY + coinSize / 2;
+    const dist = Math.sqrt((cx - gx) ** 2 + (cy - gy) ** 2);
+    return dist < 32; // 判定范围可以调
+}
+
+// 随机刷新金币
+function resetCoin() {
+    coinX = Math.random() * (canvas.width - coinSize);
+    coinY = 180 + Math.random() * 140;
 }
 
 // ===== 触屏滑动控制主角 =====
@@ -77,7 +101,7 @@ canvas.addEventListener('touchend', function(e) {
     lastTouchX = null;
 });
 
-// ====== 键盘控制也可用 ======
+// 键盘控制也可用
 document.addEventListener('keydown', function(e) {
     if (!isStarted) return;
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
@@ -92,13 +116,18 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// 获得金币并播放音效
-function getCoin() {
-    coinSound.currentTime = 0;
-    coinSound.play();
-    score += 10;
-    updateUI();
+// 主循环，自动检测是否拾取金币
+function mainLoop() {
+    if (!isStarted) return;
+    if (checkGetCoin()) {
+        coinSound.currentTime = 0;
+        coinSound.play();
+        score += 10;
+        updateUI();
+        resetCoin();
+    }
     draw();
+    requestAnimationFrame(mainLoop);
 }
 
 // 开始游戏
@@ -117,22 +146,18 @@ function startGame() {
     score = 0;
     surviveTime = 0;
     isStarted = true;
-    characterX = 180; // 重置主角位置
+    characterX = 180;
+    resetCoin();
     updateUI();
     draw();
 
-    clearInterval(gameInterval);
     clearInterval(timeInterval);
-
-    // 每2秒获得一次金币
-    gameInterval = setInterval(() => {
-        getCoin();
-    }, 2000);
-
     timeInterval = setInterval(() => {
         surviveTime += 1;
         updateUI();
     }, 1000);
+
+    requestAnimationFrame(mainLoop); // 启动主循环
 }
 
 // 刷新UI
@@ -155,4 +180,5 @@ leaderboardBtn.onclick = () => alert("排行榜功能后端对接中...");
 // 首次进入绘制
 bg.onload = draw;
 character.onload = draw;
+coinImg.onload = draw;
 draw();
