@@ -45,6 +45,7 @@ let characterY = 300;
 let characterSpeed = 0;
 let moveLeft = false;
 let moveRight = false;
+let characterFace = 1; // 1向右，-1向左
 
 // 金币参数
 let coinX = 100;
@@ -58,7 +59,17 @@ function draw() {
     if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
     if (isStarted) {
         if (coinImg.complete) ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
-        if (character.complete) ctx.drawImage(character, characterX, characterY, 40, 40);
+
+        // 角色朝向自动切换
+        ctx.save();
+        if (characterFace === 1) {
+            ctx.drawImage(character, characterX, characterY, 40, 40);
+        } else {
+            ctx.translate(characterX + 40, characterY);
+            ctx.scale(-1, 1);
+            ctx.drawImage(character, 0, 0, 40, 40);
+        }
+        ctx.restore();
     }
 }
 
@@ -80,7 +91,6 @@ function resetCoin() {
 }
 
 // ==== 触屏控制 ====
-// 方案：按住左/右半屏，角色持续左右移动，松手停止
 canvas.addEventListener('touchstart', function(e) {
     if (!isStarted) return;
     const touch = e.touches[0];
@@ -96,7 +106,7 @@ canvas.addEventListener('touchend', function(e) {
     moveRight = false;
 });
 
-// ==== 键盘控制（持续按键支持） ====
+// ==== 键盘控制 ====
 document.addEventListener('keydown', function(e) {
     if (!isStarted) return;
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = true;
@@ -108,14 +118,14 @@ document.addEventListener('keyup', function(e) {
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = false;
 });
 
-// ====== 主循环（自然移动、金币掉落、碰撞检测）======
+// ====== 主循环（自然移动、金币掉落、碰撞检测、朝向切换）======
 function mainLoop() {
     if (!isStarted) return;
 
     // 主角惯性移动
     if (moveLeft) characterSpeed -= 0.6;
     if (moveRight) characterSpeed += 0.6;
-    characterSpeed *= 0.82; // 阻力/摩擦
+    characterSpeed *= 0.82;
     if (characterSpeed > 9) characterSpeed = 9;
     if (characterSpeed < -9) characterSpeed = -9;
     characterX += characterSpeed;
@@ -128,6 +138,10 @@ function mainLoop() {
         characterX = canvas.width - 40;
         characterSpeed = 0;
     }
+
+    // 自动切换朝向（自然切换）
+    if (characterSpeed > 0.2) characterFace = 1;
+    else if (characterSpeed < -0.2) characterFace = -1;
 
     // 金币下落
     coinY += coinSpeed;
@@ -170,6 +184,7 @@ function startGame() {
     characterSpeed = 0;
     moveLeft = false;
     moveRight = false;
+    characterFace = 1;
     resetCoin();
     updateUI();
     draw();
