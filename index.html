@@ -1,22 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>无尽跑酷游戏</title>
+  <title>Temple Run H5</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-    <div id="ui">
-      <div id="score">分数: 0</div>
-      <div id="time">存活时间: 0s</div>
-      <div id="chances">今日机会: 3 | 邀请机会: 0</div>
-      <button id="startBtn">开始游戏</button>
-      <button id="taskBtn">查看任务</button>
-      <button id="skinsBtn">切换皮肤</button>
-      <button id="leaderboardBtn">排行榜</button>
+  <!-- 首页界面 -->
+  <div id="welcome-screen">
+    <h1>Temple Run H5</h1>
+    <p>一款轻量级跑酷小游戏，点击下方按钮开始！</p>
+    <button id="goGameBtn">开始游戏</button>
+  </div>
+
+  <!-- 游戏主界面 -->
+  <div id="game-screen" style="display:none;">
+    <div id="game-container">
+      <canvas id="gameCanvas"></canvas>
+      <div id="ui">
+        <div id="score"></div>
+        <div id="time"></div>
+        <div id="chances"></div>
+        <button id="startBtn">开始游戏</button>
+        <button id="taskBtn">查看任务</button>
+        <button id="skinsBtn">切换皮肤</button>
+        <button id="leaderboardBtn">排行榜</button>
+      </div>
     </div>
   </div>
   <script src="game.js"></script>
