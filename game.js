@@ -12,6 +12,12 @@ const startBtn = document.getElementById("startBtn");
 const taskBtn = document.getElementById("taskBtn");
 const skinsBtn = document.getElementById("skinsBtn");
 const leaderboardBtn = document.getElementById("leaderboardBtn");
+const canvas = document.getElementById('gameCanvas');
+canvas.width = 400;
+canvas.height = 400;
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'red';
+ctx.fillRect(50, 50, 100, 100);
 
 startBtn.onclick = startGame;
 
