@@ -6,10 +6,11 @@ let leaderboardData = [
     { name: "玩家B", score: 230 },
     { name: "玩家C", score: 180 }
 ];
-let characterX = 180, characterY = 300, characterFace = 1;
+let characterX = 180, characterY = 0, characterFace = 1; // characterY 初始化为0
 let coinX = 100, coinY = 0, coinSize = 32, coinSpeed = 3;
 let trapX = 200, trapY = 0, trapSize = 36, trapSpeed = 4;
 let dragging = false, dragStartX = null, charStartX = null;
+const characterWidth = 40, characterHeight = 40; // 如你的主角素材实际尺寸
 
 // DOM
 const welcomeScreen = document.getElementById("welcome-screen");
@@ -38,7 +39,6 @@ const coinSound = new Audio("assets/coin.mp3");
 
 // ========== 自适应全屏 ==========
 function resizeCanvas() {
-    // 让canvas和CSS视觉像素一致，保证高清屏清晰
     const dpr = window.devicePixelRatio || 1;
     canvas.width = window.innerWidth * dpr;
     canvas.height = (window.innerHeight - 46) * dpr; // 46px为顶部状态栏
@@ -46,9 +46,14 @@ function resizeCanvas() {
     canvas.style.height = (window.innerHeight - 46) + "px";
     ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
+
+    // 角色始终贴底
+    if (isStarted) characterY = canvas.height / dpr - characterHeight - 8; // 8px离底缓冲
 }
 window.addEventListener('resize', () => {
-    if (gameScreen.style.display === "block") resizeCanvas();
+    if (gameScreen.style.display === "block") {
+        resizeCanvas();
+    }
 });
 
 // ========== 首页及排行榜 ==========
@@ -76,34 +81,33 @@ leaderboardBtn.onclick = () => alert("排行榜功能后端对接中...");
 // ========== 游戏主循环 ==========
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // 画布自适应后，宽高直接用canvas.width/height，不用写死400
     if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
     if (coinImg.complete) ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
     if (trapImg.complete) ctx.drawImage(trapImg, trapX, trapY, trapSize, trapSize);
     ctx.save();
     if (characterFace === 1) {
-        ctx.drawImage(character, characterX, characterY, 40, 40);
+        ctx.drawImage(character, characterX, characterY, characterWidth, characterHeight);
     } else {
-        ctx.translate(characterX + 40, characterY);
+        ctx.translate(characterX + characterWidth, characterY);
         ctx.scale(-1, 1);
-        ctx.drawImage(character, 0, 0, 40, 40);
+        ctx.drawImage(character, 0, 0, characterWidth, characterHeight);
     }
     ctx.restore();
 }
 function checkGetCoin() {
     return (
         characterX < coinX + coinSize &&
-        characterX + 40 > coinX &&
+        characterX + characterWidth > coinX &&
         characterY < coinY + coinSize &&
-        characterY + 40 > coinY
+        characterY + characterHeight > coinY
     );
 }
 function checkHitTrap() {
     return (
         characterX < trapX + trapSize &&
-        characterX + 40 > trapX &&
+        characterX + characterWidth > trapX &&
         characterY < trapY + trapSize &&
-        characterY + 40 > trapY
+        characterY + characterHeight > trapY
     );
 }
 function resetCoin() {
@@ -164,14 +168,14 @@ function startGame() {
     surviveTime = 0;
     isStarted = true;
     isGameOver = false;
-    characterX = canvas.width/2 - 20; // 居中
-    characterY = canvas.height - 100; // 靠下
+    resizeCanvas();
+    characterX = canvas.width / (window.devicePixelRatio || 1) / 2 - characterWidth / 2;
+    characterY = canvas.height / (window.devicePixelRatio || 1) - characterHeight - 8; // 8px离底
     characterFace = 1;
     resetCoin();
     resetTrap();
     welcomeScreen.style.display = "none";
     gameScreen.style.display = "block";
-    resizeCanvas();
     updateUI();
     draw();
 
@@ -204,8 +208,10 @@ canvas.addEventListener('touchmove', function(e) {
     if (!dragging) return;
     const delta = e.touches[0].clientX - dragStartX;
     characterX = charStartX + delta;
+    // 限制左右
     if (characterX < 0) characterX = 0;
-    if (characterX > canvas.width - 40) characterX = canvas.width - 40;
+    if (characterX > canvas.width / (window.devicePixelRatio || 1) - characterWidth)
+        characterX = canvas.width / (window.devicePixelRatio || 1) - characterWidth;
     if (delta > 5) characterFace = 1;
     if (delta < -5) characterFace = -1;
     draw();
@@ -227,7 +233,8 @@ document.addEventListener('keydown', function(e) {
     }
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
         characterX += 16;
-        if (characterX > canvas.width - 40) characterX = canvas.width - 40;
+        if (characterX > canvas.width / (window.devicePixelRatio || 1) - characterWidth)
+            characterX = canvas.width / (window.devicePixelRatio || 1) - characterWidth;
         characterFace = 1;
         draw();
     }
