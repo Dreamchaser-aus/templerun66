@@ -38,7 +38,7 @@ character.src = "assets/character1.webp"; // 或 .png
 const coinImg = new Image();
 coinImg.src = "assets/coin.webp"; // 或 .png
 const trapImg = new Image();
-trapImg.src = "assets/trap.webp"; // 或 .png
+trapImg.src = "assets/trap.png"; // 或 .png
 const coinSound = new Audio("assets/coin.mp3");
 
 // ========= canvas自适应与主角贴地 ==========
