@@ -3,11 +3,16 @@ const welcomeScreen = document.getElementById("welcome-screen");
 const gameScreen = document.getElementById("game-screen");
 const goGameBtn = document.getElementById("goGameBtn");
 
-goGameBtn.onclick = () => {
-    welcomeScreen.style.display = "none";
-    gameScreen.style.display = "block";
-    draw();
-};
+// 首页机会和排行榜
+const welcomeChancesDiv = document.getElementById("welcome-chances");
+const leaderboardList = document.getElementById("leaderboard-list");
+
+// 假排行榜数据
+let leaderboardData = [
+    { name: "玩家A", score: 320 },
+    { name: "玩家B", score: 230 },
+    { name: "玩家C", score: 180 }
+];
 
 // ---- 游戏核心逻辑 ----
 const scoreDiv = document.getElementById("score");
@@ -26,7 +31,7 @@ canvas.height = 400;
 const bg = new Image();
 bg.src = "assets/background.jpg";
 const character = new Image();
-character.src = "assets/character4.png";
+character.src = "assets/character1.png";
 const coinImg = new Image();
 coinImg.src = "assets/coin.png";
 const trapImg = new Image();
@@ -62,7 +67,35 @@ let trapY = 0;
 const trapSize = 36;
 let trapSpeed = 4;
 
-// 绘制
+// === 刷新首页机会和排行榜 ===
+function updateWelcomeScreen() {
+    welcomeChancesDiv.textContent =
+        `今日机会: ${chances} | 邀请机会: ${inviteChances}`;
+    let lbHtml = "";
+    leaderboardData.forEach((item, idx) => {
+        lbHtml += `<li>${item.name}：${item.score}分</li>`;
+    });
+    leaderboardList.innerHTML = lbHtml;
+}
+
+// === 回到首页（带刷新） ===
+function goToWelcome() {
+    welcomeScreen.style.display = "block";
+    gameScreen.style.display = "none";
+    updateWelcomeScreen();
+}
+
+// ---- 初次页面显示 ----
+goToWelcome();
+
+// 点击“开始游戏”按钮
+goGameBtn.onclick = () => {
+    welcomeScreen.style.display = "none";
+    gameScreen.style.display = "block";
+    draw();
+};
+
+// ==== 绘制 ====
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
@@ -185,11 +218,15 @@ function mainLoop() {
         draw();
         setTimeout(() => {
             alert("💀 游戏结束！分数: " + score);
+            // 本地排行榜追加并排序
+            leaderboardData.push({ name: "你", score: score });
+            leaderboardData = leaderboardData
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 5);
             isStarted = false;
             isGameOver = false;
             updateUI();
-            welcomeScreen.style.display = "block";
-            gameScreen.style.display = "none";
+            goToWelcome();
         }, 100);
         return;
     }
