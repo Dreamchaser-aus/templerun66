@@ -46,8 +46,9 @@ let characterStep = 16;
 
 // 金币参数
 let coinX = 100;
-let coinY = 220;
+let coinY = 0;
 const coinSize = 32;
+let coinSpeed = 3; // 每帧掉落速度，可自行调整
 
 // 画面刷新
 function draw() {
@@ -63,16 +64,21 @@ function draw() {
 
 // 检查主角是否碰到金币
 function checkGetCoin() {
-    const cx = characterX + 20, cy = characterY + 20; // 主角中心
-    const gx = coinX + coinSize / 2, gy = coinY + coinSize / 2;
-    const dist = Math.sqrt((cx - gx) ** 2 + (cy - gy) ** 2);
-    return dist < 32; // 判定范围可以调
+    // 主角与金币矩形碰撞
+    return (
+        characterX < coinX + coinSize &&
+        characterX + 40 > coinX &&
+        characterY < coinY + coinSize &&
+        characterY + 40 > coinY
+    );
 }
 
-// 随机刷新金币
+// 刷新金币到顶部随机X
 function resetCoin() {
     coinX = Math.random() * (canvas.width - coinSize);
-    coinY = 180 + Math.random() * 140;
+    coinY = -coinSize; // 顶部之外
+    // coinSpeed 可以随得分增加（加难度）
+    // coinSpeed = 3 + Math.floor(score / 100); // 可选
 }
 
 // ===== 触屏滑动控制主角 =====
@@ -116,9 +122,14 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// 主循环，自动检测是否拾取金币
+// 主循环，金币自动下落，检测碰撞
 function mainLoop() {
     if (!isStarted) return;
+
+    // 金币下落
+    coinY += coinSpeed;
+
+    // 检查碰撞
     if (checkGetCoin()) {
         coinSound.currentTime = 0;
         coinSound.play();
@@ -126,6 +137,12 @@ function mainLoop() {
         updateUI();
         resetCoin();
     }
+
+    // 如果金币掉到画布底部，刷新到顶部
+    if (coinY > canvas.height) {
+        resetCoin();
+    }
+
     draw();
     requestAnimationFrame(mainLoop);
 }
