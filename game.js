@@ -1,4 +1,15 @@
-// 绑定页面元素
+// ---- 界面切换 ----
+const welcomeScreen = document.getElementById("welcome-screen");
+const gameScreen = document.getElementById("game-screen");
+const goGameBtn = document.getElementById("goGameBtn");
+
+goGameBtn.onclick = () => {
+    welcomeScreen.style.display = "none";
+    gameScreen.style.display = "block";
+    draw();
+};
+
+// ---- 游戏核心逻辑 ----
 const scoreDiv = document.getElementById("score");
 const timeDiv = document.getElementById("time");
 const chancesDiv = document.getElementById("chances");
@@ -11,7 +22,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = 400;
 canvas.height = 400;
 
-// 加载素材
+// 素材加载
 const bg = new Image();
 bg.src = "assets/background.jpg";
 const character = new Image();
@@ -23,6 +34,7 @@ let score = 0;
 let surviveTime = 0;
 let chances = 3;
 let inviteChances = 0;
+let isStarted = false;
 let gameInterval;
 let timeInterval;
 
@@ -31,8 +43,10 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     // 背景
     if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-    // 主角
-    if (character.complete) ctx.drawImage(character, 180, 300, 40, 40);
+    // 游戏未开始时，不显示主角和分数
+    if (isStarted) {
+        if (character.complete) ctx.drawImage(character, 180, 300, 40, 40);
+    }
 }
 
 // 获得金币并播放音效
@@ -59,6 +73,7 @@ function startGame() {
     }
     score = 0;
     surviveTime = 0;
+    isStarted = true; // 标记游戏已开始
     updateUI();
     draw();
 
@@ -78,8 +93,13 @@ function startGame() {
 
 // 刷新UI
 function updateUI() {
-    scoreDiv.textContent = `分数: ${score}`;
-    timeDiv.textContent = `存活时间: ${surviveTime}s`;
+    if (isStarted) {
+        scoreDiv.textContent = `分数: ${score}`;
+        timeDiv.textContent = `存活时间: ${surviveTime}s`;
+    } else {
+        scoreDiv.textContent = "";
+        timeDiv.textContent = "";
+    }
     chancesDiv.textContent = `今日机会: ${chances} | 邀请机会: ${inviteChances}`;
 }
 
@@ -88,7 +108,7 @@ taskBtn.onclick = () => alert("任务功能后端对接中...");
 skinsBtn.onclick = () => alert("切换皮肤功能后端对接中...");
 leaderboardBtn.onclick = () => alert("排行榜功能后端对接中...");
 
-// 初始显示
+// 首次进入绘制
 bg.onload = draw;
 character.onload = draw;
 draw();
