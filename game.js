@@ -31,7 +31,7 @@ const coinImg = new Image();
 coinImg.src = "assets/coin.png";
 const coinSound = new Audio("assets/coin.mp3");
 
-// 变量
+// 游戏变量
 let score = 0;
 let surviveTime = 0;
 let chances = 3;
@@ -42,29 +42,28 @@ let timeInterval;
 // 主角参数
 let characterX = 180;
 let characterY = 300;
-let characterStep = 16;
+let characterSpeed = 0;
+let moveLeft = false;
+let moveRight = false;
 
 // 金币参数
 let coinX = 100;
 let coinY = 0;
 const coinSize = 32;
-let coinSpeed = 3; // 每帧掉落速度，可自行调整
+let coinSpeed = 3;
 
-// 画面刷新
+// 绘制
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
     if (isStarted) {
-        // 画金币
         if (coinImg.complete) ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
-        // 画主角
         if (character.complete) ctx.drawImage(character, characterX, characterY, 40, 40);
     }
 }
 
-// 检查主角是否碰到金币
+// 碰撞检测
 function checkGetCoin() {
-    // 主角与金币矩形碰撞
     return (
         characterX < coinX + coinSize &&
         characterX + 40 > coinX &&
@@ -73,63 +72,67 @@ function checkGetCoin() {
     );
 }
 
-// 刷新金币到顶部随机X
+// 金币重置
 function resetCoin() {
     coinX = Math.random() * (canvas.width - coinSize);
-    coinY = -coinSize; // 顶部之外
-    // coinSpeed 可以随得分增加（加难度）
-    // coinSpeed = 3 + Math.floor(score / 100); // 可选
+    coinY = -coinSize;
+    // coinSpeed = 3 + Math.floor(score / 100); // 难度递增可选
 }
 
-// ===== 触屏滑动控制主角 =====
-let touchStartX = null;
-let lastTouchX = null;
-
+// ==== 触屏控制 ====
+// 方案：按住左/右半屏，角色持续左右移动，松手停止
 canvas.addEventListener('touchstart', function(e) {
     if (!isStarted) return;
-    if (e.touches.length === 1) {
-        touchStartX = e.touches[0].clientX;
-        lastTouchX = characterX;
-    }
-});
-canvas.addEventListener('touchmove', function(e) {
-    if (!isStarted) return;
-    if (e.touches.length === 1 && touchStartX !== null) {
-        const deltaX = e.touches[0].clientX - touchStartX;
-        characterX = lastTouchX + deltaX;
-        if (characterX < 0) characterX = 0;
-        if (characterX > canvas.width - 40) characterX = canvas.width - 40;
-        draw();
+    const touch = e.touches[0];
+    const bound = canvas.getBoundingClientRect();
+    if (touch.clientX < bound.left + canvas.width / 2) {
+        moveLeft = true;
+    } else {
+        moveRight = true;
     }
 });
 canvas.addEventListener('touchend', function(e) {
-    touchStartX = null;
-    lastTouchX = null;
+    moveLeft = false;
+    moveRight = false;
 });
 
-// 键盘控制也可用
+// ==== 键盘控制（持续按键支持） ====
 document.addEventListener('keydown', function(e) {
     if (!isStarted) return;
-    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-        characterX -= characterStep;
-        if (characterX < 0) characterX = 0;
-        draw();
-    }
-    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-        characterX += characterStep;
-        if (characterX > canvas.width - 40) characterX = canvas.width - 40;
-        draw();
-    }
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = true;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = true;
+});
+document.addEventListener('keyup', function(e) {
+    if (!isStarted) return;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = false;
 });
 
-// 主循环，金币自动下落，检测碰撞
+// ====== 主循环（自然移动、金币掉落、碰撞检测）======
 function mainLoop() {
     if (!isStarted) return;
+
+    // 主角惯性移动
+    if (moveLeft) characterSpeed -= 0.6;
+    if (moveRight) characterSpeed += 0.6;
+    characterSpeed *= 0.82; // 阻力/摩擦
+    if (characterSpeed > 9) characterSpeed = 9;
+    if (characterSpeed < -9) characterSpeed = -9;
+    characterX += characterSpeed;
+    // 边界
+    if (characterX < 0) {
+        characterX = 0;
+        characterSpeed = 0;
+    }
+    if (characterX > canvas.width - 40) {
+        characterX = canvas.width - 40;
+        characterSpeed = 0;
+    }
 
     // 金币下落
     coinY += coinSpeed;
 
-    // 检查碰撞
+    // 碰到金币
     if (checkGetCoin()) {
         coinSound.currentTime = 0;
         coinSound.play();
@@ -138,7 +141,7 @@ function mainLoop() {
         resetCoin();
     }
 
-    // 如果金币掉到画布底部，刷新到顶部
+    // 金币到底部
     if (coinY > canvas.height) {
         resetCoin();
     }
@@ -147,7 +150,7 @@ function mainLoop() {
     requestAnimationFrame(mainLoop);
 }
 
-// 开始游戏
+// ==== 开始游戏 ====
 startBtn.onclick = startGame;
 
 function startGame() {
@@ -164,6 +167,9 @@ function startGame() {
     surviveTime = 0;
     isStarted = true;
     characterX = 180;
+    characterSpeed = 0;
+    moveLeft = false;
+    moveRight = false;
     resetCoin();
     updateUI();
     draw();
@@ -174,10 +180,10 @@ function startGame() {
         updateUI();
     }, 1000);
 
-    requestAnimationFrame(mainLoop); // 启动主循环
+    requestAnimationFrame(mainLoop);
 }
 
-// 刷新UI
+// ==== UI刷新 ====
 function updateUI() {
     if (isStarted) {
         scoreDiv.textContent = `分数: ${score}`;
