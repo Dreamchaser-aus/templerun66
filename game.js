@@ -38,14 +38,38 @@ let isStarted = false;
 let gameInterval;
 let timeInterval;
 
+// 新增：主角运动变量
+let characterX = 180;    // 主角横坐标
+let characterY = 300;    // 主角纵坐标
+let characterSpeed = 2;  // 每帧移动像素
+let characterDir = 1;    // 1向右，-1向左
+
 // 绘制函数
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     // 背景
     if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
     // 游戏未开始时，不显示主角和分数
+    if (isStarted && character.complete) {
+        ctx.drawImage(character, characterX, characterY, 40, 40);
+    }
+}
+
+// 主角自动移动循环
+function gameLoop() {
     if (isStarted) {
-        if (character.complete) ctx.drawImage(character, 180, 300, 40, 40);
+        characterX += characterSpeed * characterDir;
+        // 到边缘反向
+        if (characterX < 0) {
+            characterX = 0;
+            characterDir = 1;
+        }
+        if (characterX > canvas.width - 40) {
+            characterX = canvas.width - 40;
+            characterDir = -1;
+        }
+        draw();
+        requestAnimationFrame(gameLoop);
     }
 }
 
@@ -74,11 +98,18 @@ function startGame() {
     score = 0;
     surviveTime = 0;
     isStarted = true; // 标记游戏已开始
+    // 重置主角位置和方向
+    characterX = 180;
+    characterY = 300;
+    characterDir = 1;
     updateUI();
     draw();
 
     clearInterval(gameInterval);
     clearInterval(timeInterval);
+
+    // 启动主角动画循环
+    requestAnimationFrame(gameLoop);
 
     // 每2秒获得一次金币
     gameInterval = setInterval(() => {
