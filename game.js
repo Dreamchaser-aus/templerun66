@@ -29,6 +29,8 @@ const character = new Image();
 character.src = "assets/character4.png";
 const coinImg = new Image();
 coinImg.src = "assets/coin.png";
+const trapImg = new Image();
+trapImg.src = "assets/trap.png";
 const coinSound = new Audio("assets/coin.mp3");
 
 // 游戏变量
@@ -37,6 +39,7 @@ let surviveTime = 0;
 let chances = 3;
 let inviteChances = 0;
 let isStarted = false;
+let isGameOver = false;
 let timeInterval;
 
 // 主角参数
@@ -45,7 +48,7 @@ let characterY = 300;
 let characterSpeed = 0;
 let moveLeft = false;
 let moveRight = false;
-let characterFace = 1; // 1向右，-1向左
+let characterFace = 1;
 
 // 金币参数
 let coinX = 100;
@@ -53,14 +56,19 @@ let coinY = 0;
 const coinSize = 32;
 let coinSpeed = 3;
 
+// 陷阱参数
+let trapX = 200;
+let trapY = 0;
+const trapSize = 36;
+let trapSpeed = 4;
+
 // 绘制
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
     if (isStarted) {
         if (coinImg.complete) ctx.drawImage(coinImg, coinX, coinY, coinSize, coinSize);
-
-        // 角色朝向自动切换
+        if (trapImg.complete) ctx.drawImage(trapImg, trapX, trapY, trapSize, trapSize);
         ctx.save();
         if (characterFace === 1) {
             ctx.drawImage(character, characterX, characterY, 40, 40);
@@ -73,7 +81,7 @@ function draw() {
     }
 }
 
-// 碰撞检测
+// 金币碰撞检测
 function checkGetCoin() {
     return (
         characterX < coinX + coinSize &&
@@ -83,16 +91,31 @@ function checkGetCoin() {
     );
 }
 
+// 陷阱碰撞检测
+function checkHitTrap() {
+    return (
+        characterX < trapX + trapSize &&
+        characterX + 40 > trapX &&
+        characterY < trapY + trapSize &&
+        characterY + 40 > trapY
+    );
+}
+
 // 金币重置
 function resetCoin() {
     coinX = Math.random() * (canvas.width - coinSize);
     coinY = -coinSize;
-    // coinSpeed = 3 + Math.floor(score / 100); // 难度递增可选
+}
+
+// 陷阱重置
+function resetTrap() {
+    trapX = Math.random() * (canvas.width - trapSize);
+    trapY = -trapSize;
 }
 
 // ==== 触屏控制 ====
 canvas.addEventListener('touchstart', function(e) {
-    if (!isStarted) return;
+    if (!isStarted || isGameOver) return;
     const touch = e.touches[0];
     const bound = canvas.getBoundingClientRect();
     if (touch.clientX < bound.left + canvas.width / 2) {
@@ -108,28 +131,27 @@ canvas.addEventListener('touchend', function(e) {
 
 // ==== 键盘控制 ====
 document.addEventListener('keydown', function(e) {
-    if (!isStarted) return;
+    if (!isStarted || isGameOver) return;
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = true;
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = true;
 });
 document.addEventListener('keyup', function(e) {
-    if (!isStarted) return;
+    if (!isStarted || isGameOver) return;
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = false;
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = false;
 });
 
-// ====== 主循环（自然移动、金币掉落、碰撞检测、朝向切换）======
+// ====== 主循环 ======
 function mainLoop() {
-    if (!isStarted) return;
+    if (!isStarted || isGameOver) return;
 
-    // 主角惯性移动
+    // 角色自然移动
     if (moveLeft) characterSpeed -= 0.6;
     if (moveRight) characterSpeed += 0.6;
     characterSpeed *= 0.82;
     if (characterSpeed > 9) characterSpeed = 9;
     if (characterSpeed < -9) characterSpeed = -9;
     characterX += characterSpeed;
-    // 边界
     if (characterX < 0) {
         characterX = 0;
         characterSpeed = 0;
@@ -138,15 +160,11 @@ function mainLoop() {
         characterX = canvas.width - 40;
         characterSpeed = 0;
     }
-
-    // 自动切换朝向（自然切换）
     if (characterSpeed > 0.2) characterFace = 1;
     else if (characterSpeed < -0.2) characterFace = -1;
 
     // 金币下落
     coinY += coinSpeed;
-
-    // 碰到金币
     if (checkGetCoin()) {
         coinSound.currentTime = 0;
         coinSound.play();
@@ -154,10 +172,26 @@ function mainLoop() {
         updateUI();
         resetCoin();
     }
+    if (coinY > canvas.height) resetCoin();
 
-    // 金币到底部
-    if (coinY > canvas.height) {
-        resetCoin();
+    // 陷阱下落
+    trapY += trapSpeed;
+    if (trapY > canvas.height) resetTrap();
+
+    // 碰到陷阱，游戏结束
+    if (checkHitTrap()) {
+        isGameOver = true;
+        updateUI();
+        draw();
+        setTimeout(() => {
+            alert("💀 游戏结束！分数: " + score);
+            isStarted = false;
+            isGameOver = false;
+            updateUI();
+            welcomeScreen.style.display = "block";
+            gameScreen.style.display = "none";
+        }, 100);
+        return;
     }
 
     draw();
@@ -180,12 +214,14 @@ function startGame() {
     score = 0;
     surviveTime = 0;
     isStarted = true;
+    isGameOver = false;
     characterX = 180;
     characterSpeed = 0;
     moveLeft = false;
     moveRight = false;
     characterFace = 1;
     resetCoin();
+    resetTrap();
     updateUI();
     draw();
 
@@ -219,4 +255,5 @@ leaderboardBtn.onclick = () => alert("排行榜功能后端对接中...");
 bg.onload = draw;
 character.onload = draw;
 coinImg.onload = draw;
+trapImg.onload = draw;
 draw();
