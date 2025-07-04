@@ -3,11 +3,15 @@ const welcomeScreen = document.getElementById("welcome-screen");
 const gameScreen = document.getElementById("game-screen");
 const goGameBtn = document.getElementById("goGameBtn");
 
+goGameBtn.onclick = () => {
+    welcomeScreen.style.display = "none";
+    gameScreen.style.display = "block";
+    draw();
+};
+
 // 首页机会和排行榜
 const welcomeChancesDiv = document.getElementById("welcome-chances");
 const leaderboardList = document.getElementById("leaderboard-list");
-
-// 假排行榜数据
 let leaderboardData = [
     { name: "玩家A", score: 320 },
     { name: "玩家B", score: 230 },
@@ -50,9 +54,6 @@ let timeInterval;
 // 主角参数
 let characterX = 180;
 let characterY = 300;
-let characterSpeed = 0;
-let moveLeft = false;
-let moveRight = false;
 let characterFace = 1;
 
 // 金币参数
@@ -78,17 +79,13 @@ function updateWelcomeScreen() {
     leaderboardList.innerHTML = lbHtml;
 }
 
-// === 回到首页（带刷新） ===
 function goToWelcome() {
     welcomeScreen.style.display = "block";
     gameScreen.style.display = "none";
     updateWelcomeScreen();
 }
-
-// ---- 初次页面显示 ----
 goToWelcome();
 
-// 点击“开始游戏”按钮
 goGameBtn.onclick = () => {
     welcomeScreen.style.display = "none";
     gameScreen.style.display = "block";
@@ -146,55 +143,54 @@ function resetTrap() {
     trapY = -trapSize;
 }
 
-// ==== 触屏控制 ====
+// ==== 触屏滑动同步控制主角 ====
+let dragging = false;
+let dragStartX = null;
+let charStartX = null;
+
 canvas.addEventListener('touchstart', function(e) {
     if (!isStarted || isGameOver) return;
-    const touch = e.touches[0];
-    const bound = canvas.getBoundingClientRect();
-    if (touch.clientX < bound.left + canvas.width / 2) {
-        moveLeft = true;
-    } else {
-        moveRight = true;
+    if (e.touches.length === 1) {
+        dragging = true;
+        dragStartX = e.touches[0].clientX;
+        charStartX = characterX;
     }
 });
+canvas.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    const delta = e.touches[0].clientX - dragStartX;
+    characterX = charStartX + delta;
+    if (characterX < 0) characterX = 0;
+    if (characterX > canvas.width - 40) characterX = canvas.width - 40;
+    // 朝向自动切换
+    if (delta > 5) characterFace = 1;
+    if (delta < -5) characterFace = -1;
+    draw();
+});
 canvas.addEventListener('touchend', function(e) {
-    moveLeft = false;
-    moveRight = false;
+    dragging = false;
 });
 
-// ==== 键盘控制 ====
+// ==== 键盘控制（可选）====
 document.addEventListener('keydown', function(e) {
     if (!isStarted || isGameOver) return;
-    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = true;
-    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = true;
-});
-document.addEventListener('keyup', function(e) {
-    if (!isStarted || isGameOver) return;
-    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = false;
-    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = false;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        characterX -= 16;
+        if (characterX < 0) characterX = 0;
+        characterFace = -1;
+        draw();
+    }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        characterX += 16;
+        if (characterX > canvas.width - 40) characterX = canvas.width - 40;
+        characterFace = 1;
+        draw();
+    }
 });
 
 // ====== 主循环 ======
 function mainLoop() {
     if (!isStarted || isGameOver) return;
-
-    // 角色自然移动
-    if (moveLeft) characterSpeed -= 0.6;
-    if (moveRight) characterSpeed += 0.6;
-    characterSpeed *= 0.82;
-    if (characterSpeed > 9) characterSpeed = 9;
-    if (characterSpeed < -9) characterSpeed = -9;
-    characterX += characterSpeed;
-    if (characterX < 0) {
-        characterX = 0;
-        characterSpeed = 0;
-    }
-    if (characterX > canvas.width - 40) {
-        characterX = canvas.width - 40;
-        characterSpeed = 0;
-    }
-    if (characterSpeed > 0.2) characterFace = 1;
-    else if (characterSpeed < -0.2) characterFace = -1;
 
     // 金币下落
     coinY += coinSpeed;
@@ -218,7 +214,6 @@ function mainLoop() {
         draw();
         setTimeout(() => {
             alert("💀 游戏结束！分数: " + score);
-            // 本地排行榜追加并排序
             leaderboardData.push({ name: "你", score: score });
             leaderboardData = leaderboardData
                 .sort((a, b) => b.score - a.score)
@@ -253,9 +248,6 @@ function startGame() {
     isStarted = true;
     isGameOver = false;
     characterX = 180;
-    characterSpeed = 0;
-    moveLeft = false;
-    moveRight = false;
     characterFace = 1;
     resetCoin();
     resetTrap();
@@ -288,7 +280,6 @@ taskBtn.onclick = () => alert("任务功能后端对接中...");
 skinsBtn.onclick = () => alert("切换皮肤功能后端对接中...");
 leaderboardBtn.onclick = () => alert("排行榜功能后端对接中...");
 
-// 首次进入绘制
 bg.onload = draw;
 character.onload = draw;
 coinImg.onload = draw;
